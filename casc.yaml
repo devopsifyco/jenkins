@@ -1,0 +1,60 @@
+jenkins:
+  nodes:
+  slaveAgentPort: 50000
+  agentProtocols:
+    - "jnlp2"
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+       - id: ${JENKINS_ADMIN_ID}
+         password: ${JENKINS_ADMIN_PASSWORD}
+  authorizationStrategy:
+    globalMatrix:
+      permissions:
+        - "Overall/Administer:admin"
+        - "Overall/Read:authenticated"
+  remotingSecurity:
+    enabled: true
+security:
+  queueItemAuthenticator:
+    authenticators:
+    - global:
+        strategy: triggeringUsersAuthorizationStrategy
+
+unclassified:
+  location:
+    url: https://jenkins.devopsify.co/
+  simple-theme-plugin:
+    elements:
+      - cssUrl:
+          url: "https://cdn.jsdelivr.net/gh/jenkinsci/dark-theme@<tag-name>/src/main/resources/io/jenkins/plugins/darktheme/theme-system.css"
+
+tool:
+  git:
+    installations:
+      - name: git
+        home: /usr/bin/git
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - usernamePassword:
+              scope:    GLOBAL
+              id:       gitlab-user
+              username: ${git_user}
+              password: ${git_password}
+          - basicSSHUserPrivateKey:
+              scope: SYSTEM
+              id: agent-private-key
+              username: ${agent_user}
+              passphrase:  ""
+              description: "ssh private key used to connect ssh slaves"
+              privateKeySource:
+                directEntry: # The key 'agent_private_key' resolved from a docker secret defined in docker-compose.yml
+                  privateKey: ${agent_password}
+          - usernamePassword:
+              scope: SYSTEM
+              id: agent-account
+              username: ${agent_user}
+              password: ${agent_password}

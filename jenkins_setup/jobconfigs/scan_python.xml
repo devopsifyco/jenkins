@@ -1,0 +1,54 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job@2.41">
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <com.dabsquared.gitlabjenkins.connection.GitLabConnectionProperty plugin="gitlab-plugin@1.5.20">
+      <gitLabConnection></gitLabConnection>
+      <jobCredentialId></jobCredentialId>
+      <useAlternativeCredential>false</useAlternativeCredential>
+    </com.dabsquared.gitlabjenkins.connection.GitLabConnectionProperty>
+  </properties>
+  <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.93">
+    <script>def token_sonarqube = &quot;5261901ee898f56e509cbf2653cbe702438f81c4&quot;
+def sonar_host_url  = &quot;10.29.0.12:9000&quot;
+def projectKey      = &quot;python&quot;
+def git_repo        = &quot;https://gitlab.com/quanhk511/python_sonar.git&quot;
+
+pipeline {
+  options {
+    timestamps()
+    timeout(time: 180, unit: &apos;MINUTES&apos;)
+    disableConcurrentBuilds()
+    buildDiscarder(logRotator(numToKeepStr: &apos;250&apos;, daysToKeepStr: &apos;5&apos;))
+  }
+  agent any
+  environment {
+    IMAGE_TAG     = &quot;${GIT_BRANCH.tokenize(&apos;/&apos;).pop()}-${BUILD_NUMBER}&quot;
+    SONAR_HOME    = &quot;${tool &apos;sonar-46&apos;}&quot;
+    GIT_CREDS_USR = credentials(&apos;GIT_CREDS_USR&apos;)
+    GIT_CREDS_PSW = credentials(&apos;GIT_CREDS_PSW&apos;)
+  }
+  stages {
+    stage(&apos;Checkout source&apos;) {
+      steps {
+        git changelog: false, credentialsId: &apos;gitlab_quanhk511&apos;,
+        poll: false, url: &quot;${git_repo}&quot;                  
+      }
+    }
+    stage(&apos;Run Scan&apos;) {
+      steps {
+        sh &quot;${env.SONAR_HOME}/bin/sonar-scanner \
+              -Dsonar.projectKey=${projectKey} \
+              -Dsonar.sources=. \
+              -Dsonar.host.url=${sonar_host_url} \
+              -Dsonar.login=${token_sonarqube}&quot;
+      }
+    }
+  }
+}</script>
+    <sandbox>false</sandbox>
+  </definition>
+  <triggers/>
+  <disabled>false</disabled>
+</flow-definition>
